@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Recent Scans</title>
+  <style>
+    :root { --br:#e5e7eb; --txt:#111827; --muted:#6b7280; }
+    body { font-family: Arial, sans-serif; margin: 24px; color: var(--txt); }
+    h1 { margin-bottom: 8px; }
+    p a { color:#2563eb; text-decoration:none; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th, td { border:1px solid var(--br); padding:8px; text-align:left; font-size:14px; }
+    th { background:#fafafa; }
+    .row-actions a { margin-right:12px; color:#2563eb; text-decoration:none; }
+    .muted { color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>Recent Scans</h1>
+  <p class="muted">Review your last 50 scans. Open to view details or export as CSV/JSON.</p>
+  <p><a href="/">Back</a> · <a href="/penetration_tester">New Scan</a></p>
+
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Created (UTC)</th><th>IP</th><th>Profile</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for it in items %}
+      <tr>
+        <td>{{ it.id }}</td>
+        <td>{{ it.created_at }}</td>
+        <td>{{ it.ip }}</td>
+        <td>{{ it.profile }}</td>
+        <td class="row-actions">
+          <a href="/penetration_tester/view/{{ it.id }}">Open</a>
+          <a href="/penetration_tester/export/{{ it.id }}.csv">CSV</a>
+          <a href="/penetration_tester/export/{{ it.id }}.json">JSON</a>
+        </td>
+      </tr>
+      {% endfor %}
+      {% if not items %}
+      <tr><td colspan="5">No scans yet. <a href="/penetration_tester">Run your first scan</a>.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</body>
+</html>

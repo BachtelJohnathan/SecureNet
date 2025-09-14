@@ -1,0 +1,129 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Penetration Tester</title>
+  <style>
+    :root { --br:#e5e7eb; --txt:#111827; --muted:#6b7280; }
+    body { font-family: Arial, sans-serif; margin: 24px; color: var(--txt); }
+    h1 { margin-bottom: 8px; }
+    form { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin: 8px 0 16px; }
+    label { display:flex; align-items:center; gap:6px; }
+    input, select, button { padding:8px 10px; border:1px solid var(--br); border-radius:8px; }
+    button { cursor:pointer; }
+    .links { margin-left:auto; display:flex; gap:12px; }
+    .links a { text-decoration:none; color:#2563eb; }
+    .muted { color: var(--muted); font-size: 13px; }
+
+    .summary { display:flex; gap:14px; flex-wrap:wrap; margin-top: 4px; }
+    .pill { padding:4px 10px; border-radius:999px; font-size:12px; border:1px solid var(--br); }
+    .pill.open { background:#eef2ff; }
+    .pill.red { background:#fee2e2; color:#991b1b; border-color:#fecaca; }
+    .pill.yellow { background:#fff6cc; color:#7a5d00; border-color:#fde68a; }
+    .pill.green { background:#e7f7ea; color:#166534; border-color:#bbf7d0; }
+
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th, td { border:1px solid var(--br); padding:8px; text-align:left; font-size:14px; vertical-align:top; }
+    th { background:#fafafa; }
+    .chip { display:inline-block; padding:2px 8px; border-radius:12px; font-size:12px; }
+    .chip.green  { background:#e7f7ea; color:#166534; }
+    .chip.yellow { background:#fff6cc; color:#7a5d00; }
+    .chip.red    { background:#fee2e2; color:#991b1b; }
+
+    /* row highlights */
+    tr.row-green  { background:#f6fffa; }
+    tr.row-yellow { background:#fffdf2; }
+    tr.row-red    { background:#fff6f6; }
+
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+    .err { color:#991b1b; margin-top:8px; }
+  </style>
+</head>
+<body>
+  <h1>Penetration Tester</h1>
+  <p class="muted">Scope-locked to localhost/private IPs. Save results & export CSV/JSON.</p>
+
+  <form method="post">
+    <label>Target:
+      <input name="target" placeholder="127.0.0.1 or 192.168.x.x" value="{{ target or '' }}" required>
+    </label>
+    <label>Profile:
+      <select name="profile">
+        <option value="fast" {% if profile=='fast' %}selected{% endif %}>Fast (common ports)</option>
+        <option value="full" {% if profile=='full' %}selected{% endif %}>Full (extended)</option>
+      </select>
+    </label>
+    <!-- optional power-user override; leave blank to use profile -->
+    <label>Custom ports (opt):
+      <input name="ports" placeholder="22,80,443 or 20-25">
+    </label>
+    <button type="submit" title="Run the scan">Run Scan</button>
+    <div class="links">
+      <a href="/penetration_tester/recent" title="See saved scans">Recent Scans</a>
+      <a href="/" title="Back to dashboard">Back</a>
+    </div>
+  </form>
+
+  {% if error %}
+    <div class="err">{{ error }}</div>
+  {% endif %}
+
+  {% if results %}
+  {% set ns = namespace(open=0, red=0, yellow=0, green=0) %}
+  {% for r in results.rows %}
+    {% if r.status == 'open' %}{% set ns.open = ns.open + 1 %}{% endif %}
+    {% if r.risk == 'red' %}{% set ns.red = ns.red + 1 %}
+    {% elif r.risk == 'yellow' %}{% set ns.yellow = ns.yellow + 1 %}
+    {% elif r.risk == 'green' %}{% set ns.green = ns.green + 1 %}
+    {% endif %}
+  {% endfor %}
+  {% set total = results.rows|length %}
+
+  <div id="results"></div>
+  <h3>Results for {{ results.ip }}</h3>
+  <div class="summary">
+    <span class="pill">Scanned: <b>{{ total }}</b></span>
+    <span class="pill open">Open: <b>{{ ns.open }}</b></span>
+    <span class="pill red">High-risk: <b>{{ ns.red }}</b></span>
+    <span class="pill yellow">Warnings: <b>{{ ns.yellow }}</b></span>
+    <span class="pill green">Low-risk: <b>{{ ns.green }}</b></span>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Port</th><th>Service</th><th>Status</th><th>Risk</th><th>Recommendation</th><th>Banner</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in results.rows %}
+      <tr class="row-{{ r.risk }}">
+        <td title="TCP port {{ r.port }}">{{ r.port }}</td>
+        <td title="{{ r.service }} on port {{ r.port }}">{{ r.service }}</td>
+        <td title="Connection status">{{ r.status }}</td>
+        <td><span class="chip {{ r.risk }}" title="Risk level">{{ r.risk|capitalize }}</span></td>
+        <td title="Why this might be risky">{{ r.rec }}</td>
+        <td><code title="First 128 bytes / best-effort">{{ r.banner }}</code></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if last_id %}
+    <p style="margin-top:8px;">
+      Export:
+      <a href="/penetration_tester/export/{{ last_id }}.csv">CSV</a> ·
+      <a href="/penetration_tester/export/{{ last_id }}.json">JSON</a>
+    </p>
+  {% endif %}
+  {% endif %}
+
+  <script>
+    // auto-scroll to results after a scan
+    (function () {
+      var anchor = document.getElementById('results');
+      if (anchor) { anchor.scrollIntoView({behavior:'smooth', block:'start'}); }
+    })();
+  </script>
+</body>
+</html>

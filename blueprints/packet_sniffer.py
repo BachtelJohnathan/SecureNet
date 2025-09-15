@@ -13,6 +13,8 @@ Or:
 """
 
 from flask import Flask
+
+# IMPORTANT: these imports are one-way; blueprints must NOT import from app
 from blueprints.home import home_bp
 from blueprints.packet_sniffer import packet_sniffer_bp
 from blueprints.vulnerability_scanner import vulnerability_scanner_bp
@@ -22,7 +24,7 @@ from blueprints.penetration_tester import penetration_tester_bp
 def create_app() -> Flask:
     app = Flask(__name__)
 
-    # Register blueprints
+    # Register blueprints (no side effects)
     app.register_blueprint(home_bp)
     app.register_blueprint(packet_sniffer_bp)
     app.register_blueprint(vulnerability_scanner_bp)
@@ -35,6 +37,17 @@ if __name__ == "__main__":
     flask_app = create_app()
     flask_app.run(host="0.0.0.0", port=5000, debug=False)
 
+
+# =============================================
+# blueprints/__init__.py
+# (ensures this is a proper package and helps avoid import ambiguity)
+# =============================================
+# Intentionally empty
+
+# =============================================
+# tools/__init__.py
+# =============================================
+# Intentionally empty
 
 # =============================================
 # blueprints/home.py
